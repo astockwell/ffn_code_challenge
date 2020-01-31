@@ -1,18 +1,6 @@
-# Notes
-Task{
-	ID
-	Priority
-	ReqSkills []string
-	AssignedAgent *Agent
-	AssignmentTime *time.Time
-	State?
-}
-Agent{
-	ID
-	Skills []string
-}
+# FFN Challenge
 
-# Questions / Answers
+## Questions / Answers
 It seems that an agent can be assigned multiple active tasks, as long as priority is respected. Is that true?
 	-> As long as the conditions are not violated and priority is respected, an agent can be assigned multiple tasks.
 Will a task ever be assigned to more than one agent at a time?

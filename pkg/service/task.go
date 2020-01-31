@@ -6,7 +6,7 @@ type Task struct {
 	ID             uint      `json:"id"`
 	Priority       Priority  `json:"priority"`
 	ReqSkills      Skills    `json:"required_skills"`
-	AssignedAgent  *Agent    `json:"assigned_agent"`
+	AssignedAgent  *Agent    `json:"assigned_agent,omitempty"`
 	AssignmentTime time.Time `json:"assignment_time"`
 	State          TaskState `json:"task_state"`
 }

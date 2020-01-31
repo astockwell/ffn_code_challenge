@@ -29,7 +29,7 @@ func (s *Store) AddAgents(agents []*Agent) error {
 	for i := 0; i < len(agents); i++ {
 		agents[i].ID = s.NextAgentID()
 		s.Lock()
-		s.agents = append(agents, agents[i])
+		s.agents = append(s.agents, agents[i])
 		s.Unlock()
 	}
 
@@ -150,6 +150,7 @@ func (s *Store) AddTaskToAgent(t *Task) (assignedAgentID uint, taskID uint, err 
 	// ignore errors because we know all agents in availableAgentPool have tasks
 	_ = availableAgentPool.SortByTaskStartTime()
 	selectedAgent = availableAgentPool[0]
+
 	err = s.addTaskToAgentUnshift(selectedAgent.ID, t)
 	if err != nil {
 		return 0, 0, errors.Wrap(err, "s.addTaskToAgentUnshift()")
@@ -220,7 +221,7 @@ func (s *Store) MarkAsCompleted(taskID uint) error {
 func (s *Store) NextAgentID() uint {
 	id := uint(1)
 	for _, agent := range s.agents {
-		if agent.ID > id {
+		if agent.ID >= id {
 			id = agent.ID + 1
 		}
 	}
