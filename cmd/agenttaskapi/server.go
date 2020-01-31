@@ -1,7 +1,7 @@
 package main
 
 import (
-	"github.com/astockwell/ffn/pkg/storage"
+	"github.com/astockwell/ffn/pkg/service"
 	"github.com/unrolled/render"
 )
 
@@ -9,5 +9,5 @@ import (
 // to handlers to prevent having constant propogating changes.
 type DataSourceOrchestration struct {
 	Renderer *render.Render
-	Store    *storage.Store
+	Store    *service.Store
 }

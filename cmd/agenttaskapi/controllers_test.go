@@ -9,19 +9,19 @@ import (
 	"testing"
 	"time"
 
-	"github.com/astockwell/ffn/pkg/storage"
+	"github.com/astockwell/ffn/pkg/service"
 	"github.com/julienschmidt/httprouter"
 	log "github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	"github.com/unrolled/render"
 )
 
-func buildSeededTestStore(t *testing.T) *storage.Store {
+func buildSeededTestStore(t *testing.T) *service.Store {
 	// Setup data store
-	store := &storage.Store{}
+	store := &service.Store{}
 
 	// Seed data store
-	agents := storage.BuildSeedAgents()
+	agents := service.BuildSeedAgents()
 	err := store.AddAgents(agents)
 	if err != nil {
 		t.Fatal(err)
@@ -54,19 +54,19 @@ func Test_route_Tasks_New_POST(t *testing.T) {
 
 	tests := []struct {
 		name                 string         // Test name
-		store                *storage.Store // Initial state of the data store prior to HTTP request
+		store                *service.Store // Initial state of the data store prior to HTTP request
 		postBody             testRequest    // HTTP request body (in struct form)
 		wantStatus           int            // Expected HTTP response code
 		wantResponseContains []string       // For validating errors
 		wantResponse         *testResponse  // For validating successes
-		wantStore            *storage.Store // Expected state of the data store after HTTP request is complete
+		wantStore            *service.Store // Expected state of the data store after HTTP request is complete
 	}{
 		{
 			name: "Simple Assignment goes to first available agent",
-			store: storage.NewStore([]*storage.Agent{
-				&storage.Agent{Name: "Adam", Skills: storage.Skills{storage.Skill1, storage.Skill2}, Tasks: []*storage.Task{}},
-				&storage.Agent{Name: "Betty", Skills: storage.Skills{storage.Skill2, storage.Skill3}, Tasks: []*storage.Task{}},
-				&storage.Agent{Name: "Charlie", Skills: storage.Skills{storage.Skill1}, Tasks: []*storage.Task{}},
+			store: service.NewStore([]*service.Agent{
+				&service.Agent{Name: "Adam", Skills: service.Skills{service.Skill1, service.Skill2}, Tasks: []*service.Task{}},
+				&service.Agent{Name: "Betty", Skills: service.Skills{service.Skill2, service.Skill3}, Tasks: []*service.Task{}},
+				&service.Agent{Name: "Charlie", Skills: service.Skills{service.Skill1}, Tasks: []*service.Task{}},
 			}, nil),
 			postBody:   testRequest{Priority: "high", ReqSkills: []string{"skill1"}},
 			wantStatus: http.StatusCreated,
@@ -77,22 +77,22 @@ func Test_route_Tasks_New_POST(t *testing.T) {
 				AssignedAgent:  testResponseAgent{ID: 1, Name: "Adam", Skills: []string{"skill1", "skill2"}},
 				TaskState:      0,
 			},
-			wantStore: storage.NewStore([]*storage.Agent{
-				&storage.Agent{Name: "Adam", Skills: storage.Skills{storage.Skill1, storage.Skill2}, Tasks: []*storage.Task{
-					&storage.Task{ID: 1, Priority: storage.PriorityHigh, ReqSkills: storage.Skills{storage.Skill1}, State: storage.TaskInWIP},
+			wantStore: service.NewStore([]*service.Agent{
+				&service.Agent{Name: "Adam", Skills: service.Skills{service.Skill1, service.Skill2}, Tasks: []*service.Task{
+					&service.Task{ID: 1, Priority: service.PriorityHigh, ReqSkills: service.Skills{service.Skill1}, State: service.TaskInWIP},
 				}},
-				&storage.Agent{Name: "Betty", Skills: storage.Skills{storage.Skill2, storage.Skill3}, Tasks: []*storage.Task{}},
-				&storage.Agent{Name: "Charlie", Skills: storage.Skills{storage.Skill1}, Tasks: []*storage.Task{}},
+				&service.Agent{Name: "Betty", Skills: service.Skills{service.Skill2, service.Skill3}, Tasks: []*service.Task{}},
+				&service.Agent{Name: "Charlie", Skills: service.Skills{service.Skill1}, Tasks: []*service.Task{}},
 			}, nil),
 		},
 		{
 			name: "Simple Assignment w/ existing task (1) goes to next available agent",
-			store: storage.NewStore([]*storage.Agent{
-				&storage.Agent{Name: "Adam", Skills: storage.Skills{storage.Skill1, storage.Skill2}, Tasks: []*storage.Task{
-					&storage.Task{ID: 1, Priority: storage.PriorityHigh, ReqSkills: storage.Skills{storage.Skill1}, State: storage.TaskInWIP},
+			store: service.NewStore([]*service.Agent{
+				&service.Agent{Name: "Adam", Skills: service.Skills{service.Skill1, service.Skill2}, Tasks: []*service.Task{
+					&service.Task{ID: 1, Priority: service.PriorityHigh, ReqSkills: service.Skills{service.Skill1}, State: service.TaskInWIP},
 				}},
-				&storage.Agent{Name: "Betty", Skills: storage.Skills{storage.Skill2, storage.Skill3}, Tasks: []*storage.Task{}},
-				&storage.Agent{Name: "Charlie", Skills: storage.Skills{storage.Skill1}, Tasks: []*storage.Task{}},
+				&service.Agent{Name: "Betty", Skills: service.Skills{service.Skill2, service.Skill3}, Tasks: []*service.Task{}},
+				&service.Agent{Name: "Charlie", Skills: service.Skills{service.Skill1}, Tasks: []*service.Task{}},
 			}, nil),
 			postBody:   testRequest{Priority: "high", ReqSkills: []string{"skill1"}},
 			wantStatus: http.StatusCreated,
@@ -103,25 +103,25 @@ func Test_route_Tasks_New_POST(t *testing.T) {
 				AssignedAgent:  testResponseAgent{ID: 3, Name: "Charlie", Skills: []string{"skill1"}},
 				TaskState:      0,
 			},
-			wantStore: storage.NewStore([]*storage.Agent{
-				&storage.Agent{Name: "Adam", Skills: storage.Skills{storage.Skill1, storage.Skill2}, Tasks: []*storage.Task{
-					&storage.Task{ID: 1, Priority: storage.PriorityHigh, ReqSkills: storage.Skills{storage.Skill1}, State: storage.TaskInWIP},
+			wantStore: service.NewStore([]*service.Agent{
+				&service.Agent{Name: "Adam", Skills: service.Skills{service.Skill1, service.Skill2}, Tasks: []*service.Task{
+					&service.Task{ID: 1, Priority: service.PriorityHigh, ReqSkills: service.Skills{service.Skill1}, State: service.TaskInWIP},
 				}},
-				&storage.Agent{Name: "Betty", Skills: storage.Skills{storage.Skill2, storage.Skill3}, Tasks: []*storage.Task{}},
-				&storage.Agent{Name: "Charlie", Skills: storage.Skills{storage.Skill1}, Tasks: []*storage.Task{
-					&storage.Task{ID: 2, Priority: storage.PriorityHigh, ReqSkills: storage.Skills{storage.Skill1}, State: storage.TaskInWIP},
+				&service.Agent{Name: "Betty", Skills: service.Skills{service.Skill2, service.Skill3}, Tasks: []*service.Task{}},
+				&service.Agent{Name: "Charlie", Skills: service.Skills{service.Skill1}, Tasks: []*service.Task{
+					&service.Task{ID: 2, Priority: service.PriorityHigh, ReqSkills: service.Skills{service.Skill1}, State: service.TaskInWIP},
 				}},
 			}, nil),
 		},
 		{
 			name: "Simple Assignment w/ existing tasks (2) goes to last available agent",
-			store: storage.NewStore([]*storage.Agent{
-				&storage.Agent{Name: "Adam", Skills: storage.Skills{storage.Skill1, storage.Skill2}, Tasks: []*storage.Task{
-					&storage.Task{ID: 1, Priority: storage.PriorityHigh, ReqSkills: storage.Skills{storage.Skill1}, State: storage.TaskInWIP},
+			store: service.NewStore([]*service.Agent{
+				&service.Agent{Name: "Adam", Skills: service.Skills{service.Skill1, service.Skill2}, Tasks: []*service.Task{
+					&service.Task{ID: 1, Priority: service.PriorityHigh, ReqSkills: service.Skills{service.Skill1}, State: service.TaskInWIP},
 				}},
-				&storage.Agent{Name: "Betty", Skills: storage.Skills{storage.Skill2, storage.Skill3}, Tasks: []*storage.Task{}},
-				&storage.Agent{Name: "Charlie", Skills: storage.Skills{storage.Skill1}, Tasks: []*storage.Task{
-					&storage.Task{ID: 2, Priority: storage.PriorityHigh, ReqSkills: storage.Skills{storage.Skill1}, State: storage.TaskInWIP},
+				&service.Agent{Name: "Betty", Skills: service.Skills{service.Skill2, service.Skill3}, Tasks: []*service.Task{}},
+				&service.Agent{Name: "Charlie", Skills: service.Skills{service.Skill1}, Tasks: []*service.Task{
+					&service.Task{ID: 2, Priority: service.PriorityHigh, ReqSkills: service.Skills{service.Skill1}, State: service.TaskInWIP},
 				}},
 			}, nil),
 			postBody:   testRequest{Priority: "high", ReqSkills: []string{"skill3"}},
@@ -133,59 +133,59 @@ func Test_route_Tasks_New_POST(t *testing.T) {
 				AssignedAgent:  testResponseAgent{ID: 2, Name: "Betty", Skills: []string{"skill2", "skill3"}},
 				TaskState:      0,
 			},
-			wantStore: storage.NewStore([]*storage.Agent{
-				&storage.Agent{Name: "Adam", Skills: storage.Skills{storage.Skill1, storage.Skill2}, Tasks: []*storage.Task{
-					&storage.Task{ID: 1, Priority: storage.PriorityHigh, ReqSkills: storage.Skills{storage.Skill1}, State: storage.TaskInWIP},
+			wantStore: service.NewStore([]*service.Agent{
+				&service.Agent{Name: "Adam", Skills: service.Skills{service.Skill1, service.Skill2}, Tasks: []*service.Task{
+					&service.Task{ID: 1, Priority: service.PriorityHigh, ReqSkills: service.Skills{service.Skill1}, State: service.TaskInWIP},
 				}},
-				&storage.Agent{Name: "Betty", Skills: storage.Skills{storage.Skill2, storage.Skill3}, Tasks: []*storage.Task{
-					&storage.Task{ID: 3, Priority: storage.PriorityHigh, ReqSkills: storage.Skills{storage.Skill3}, State: storage.TaskInWIP},
+				&service.Agent{Name: "Betty", Skills: service.Skills{service.Skill2, service.Skill3}, Tasks: []*service.Task{
+					&service.Task{ID: 3, Priority: service.PriorityHigh, ReqSkills: service.Skills{service.Skill3}, State: service.TaskInWIP},
 				}},
-				&storage.Agent{Name: "Charlie", Skills: storage.Skills{storage.Skill1}, Tasks: []*storage.Task{
-					&storage.Task{ID: 2, Priority: storage.PriorityHigh, ReqSkills: storage.Skills{storage.Skill1}, State: storage.TaskInWIP},
+				&service.Agent{Name: "Charlie", Skills: service.Skills{service.Skill1}, Tasks: []*service.Task{
+					&service.Task{ID: 2, Priority: service.PriorityHigh, ReqSkills: service.Skills{service.Skill1}, State: service.TaskInWIP},
 				}},
 			}, nil),
 		},
 		{
 			name:                 "Assignment fails: no agent w/ skills available",
-			store:                storage.NewStore([]*storage.Agent{}, nil),
+			store:                service.NewStore([]*service.Agent{}, nil),
 			postBody:             testRequest{Priority: "high", ReqSkills: []string{"skill1"}},
 			wantStatus:           http.StatusConflict,
 			wantResponseContains: []string{`{"error":"Could not assign task: No existing agents possess the required skills for this task"}`},
-			wantStore:            storage.NewStore([]*storage.Agent{}, nil),
+			wantStore:            service.NewStore([]*service.Agent{}, nil),
 		},
 		{
 			name: "Assignment fails: no agent available for priority",
-			store: storage.NewStore([]*storage.Agent{
-				&storage.Agent{Name: "Adam", Skills: storage.Skills{storage.Skill1, storage.Skill2}, Tasks: []*storage.Task{
-					&storage.Task{ID: 1, Priority: storage.PriorityHigh, ReqSkills: storage.Skills{storage.Skill1}, State: storage.TaskInWIP},
+			store: service.NewStore([]*service.Agent{
+				&service.Agent{Name: "Adam", Skills: service.Skills{service.Skill1, service.Skill2}, Tasks: []*service.Task{
+					&service.Task{ID: 1, Priority: service.PriorityHigh, ReqSkills: service.Skills{service.Skill1}, State: service.TaskInWIP},
 				}},
-				&storage.Agent{Name: "Betty", Skills: storage.Skills{storage.Skill2, storage.Skill3}, Tasks: []*storage.Task{}},
-				&storage.Agent{Name: "Charlie", Skills: storage.Skills{storage.Skill1}, Tasks: []*storage.Task{
-					&storage.Task{ID: 2, Priority: storage.PriorityHigh, ReqSkills: storage.Skills{storage.Skill1}, State: storage.TaskInWIP},
+				&service.Agent{Name: "Betty", Skills: service.Skills{service.Skill2, service.Skill3}, Tasks: []*service.Task{}},
+				&service.Agent{Name: "Charlie", Skills: service.Skills{service.Skill1}, Tasks: []*service.Task{
+					&service.Task{ID: 2, Priority: service.PriorityHigh, ReqSkills: service.Skills{service.Skill1}, State: service.TaskInWIP},
 				}},
 			}, nil),
 			postBody:             testRequest{Priority: "high", ReqSkills: []string{"skill1"}},
 			wantStatus:           http.StatusConflict,
 			wantResponseContains: []string{`{"error":"Could not assign task: No agents are currently available for this task priority"}`},
-			wantStore: storage.NewStore([]*storage.Agent{
-				&storage.Agent{Name: "Adam", Skills: storage.Skills{storage.Skill1, storage.Skill2}, Tasks: []*storage.Task{
-					&storage.Task{ID: 1, Priority: storage.PriorityHigh, ReqSkills: storage.Skills{storage.Skill1}, State: storage.TaskInWIP},
+			wantStore: service.NewStore([]*service.Agent{
+				&service.Agent{Name: "Adam", Skills: service.Skills{service.Skill1, service.Skill2}, Tasks: []*service.Task{
+					&service.Task{ID: 1, Priority: service.PriorityHigh, ReqSkills: service.Skills{service.Skill1}, State: service.TaskInWIP},
 				}},
-				&storage.Agent{Name: "Betty", Skills: storage.Skills{storage.Skill2, storage.Skill3}, Tasks: []*storage.Task{}},
-				&storage.Agent{Name: "Charlie", Skills: storage.Skills{storage.Skill1}, Tasks: []*storage.Task{
-					&storage.Task{ID: 2, Priority: storage.PriorityHigh, ReqSkills: storage.Skills{storage.Skill1}, State: storage.TaskInWIP},
+				&service.Agent{Name: "Betty", Skills: service.Skills{service.Skill2, service.Skill3}, Tasks: []*service.Task{}},
+				&service.Agent{Name: "Charlie", Skills: service.Skills{service.Skill1}, Tasks: []*service.Task{
+					&service.Task{ID: 2, Priority: service.PriorityHigh, ReqSkills: service.Skills{service.Skill1}, State: service.TaskInWIP},
 				}},
 			}, nil),
 		},
 		{
 			name: "Assignment of higher priority proceeds to agent w/ most recently assigned task",
-			store: storage.NewStore([]*storage.Agent{
-				&storage.Agent{Name: "Adam", Skills: storage.Skills{storage.Skill1, storage.Skill2}, Tasks: []*storage.Task{
-					&storage.Task{ID: 1, Priority: storage.PriorityLow, ReqSkills: storage.Skills{storage.Skill1}, State: storage.TaskInWIP, AssignmentTime: time.Now().Add(-2 * time.Hour)},
+			store: service.NewStore([]*service.Agent{
+				&service.Agent{Name: "Adam", Skills: service.Skills{service.Skill1, service.Skill2}, Tasks: []*service.Task{
+					&service.Task{ID: 1, Priority: service.PriorityLow, ReqSkills: service.Skills{service.Skill1}, State: service.TaskInWIP, AssignmentTime: time.Now().Add(-2 * time.Hour)},
 				}},
-				&storage.Agent{Name: "Betty", Skills: storage.Skills{storage.Skill2, storage.Skill3}, Tasks: []*storage.Task{}},
-				&storage.Agent{Name: "Charlie", Skills: storage.Skills{storage.Skill1}, Tasks: []*storage.Task{
-					&storage.Task{ID: 2, Priority: storage.PriorityLow, ReqSkills: storage.Skills{storage.Skill1}, State: storage.TaskInWIP, AssignmentTime: time.Now().Add(-1 * time.Hour)},
+				&service.Agent{Name: "Betty", Skills: service.Skills{service.Skill2, service.Skill3}, Tasks: []*service.Task{}},
+				&service.Agent{Name: "Charlie", Skills: service.Skills{service.Skill1}, Tasks: []*service.Task{
+					&service.Task{ID: 2, Priority: service.PriorityLow, ReqSkills: service.Skills{service.Skill1}, State: service.TaskInWIP, AssignmentTime: time.Now().Add(-1 * time.Hour)},
 				}},
 			}, nil),
 			postBody:   testRequest{Priority: "high", ReqSkills: []string{"skill1"}},
@@ -197,27 +197,27 @@ func Test_route_Tasks_New_POST(t *testing.T) {
 				AssignedAgent:  testResponseAgent{ID: 3, Name: "Charlie", Skills: []string{"skill1"}},
 				TaskState:      0,
 			},
-			wantStore: storage.NewStore([]*storage.Agent{
-				&storage.Agent{Name: "Adam", Skills: storage.Skills{storage.Skill1, storage.Skill2}, Tasks: []*storage.Task{
-					&storage.Task{ID: 1, Priority: storage.PriorityLow, ReqSkills: storage.Skills{storage.Skill1}, State: storage.TaskInWIP},
+			wantStore: service.NewStore([]*service.Agent{
+				&service.Agent{Name: "Adam", Skills: service.Skills{service.Skill1, service.Skill2}, Tasks: []*service.Task{
+					&service.Task{ID: 1, Priority: service.PriorityLow, ReqSkills: service.Skills{service.Skill1}, State: service.TaskInWIP},
 				}},
-				&storage.Agent{Name: "Betty", Skills: storage.Skills{storage.Skill2, storage.Skill3}, Tasks: []*storage.Task{}},
-				&storage.Agent{Name: "Charlie", Skills: storage.Skills{storage.Skill1}, Tasks: []*storage.Task{
-					&storage.Task{ID: 3, Priority: storage.PriorityHigh, ReqSkills: storage.Skills{storage.Skill1}, State: storage.TaskInWIP},
-					&storage.Task{ID: 2, Priority: storage.PriorityLow, ReqSkills: storage.Skills{storage.Skill1}, State: storage.TaskInWIP},
+				&service.Agent{Name: "Betty", Skills: service.Skills{service.Skill2, service.Skill3}, Tasks: []*service.Task{}},
+				&service.Agent{Name: "Charlie", Skills: service.Skills{service.Skill1}, Tasks: []*service.Task{
+					&service.Task{ID: 3, Priority: service.PriorityHigh, ReqSkills: service.Skills{service.Skill1}, State: service.TaskInWIP},
+					&service.Task{ID: 2, Priority: service.PriorityLow, ReqSkills: service.Skills{service.Skill1}, State: service.TaskInWIP},
 				}},
 			}, nil),
 		},
 		{
 			name: "Assignment of higher priority proceeds to agent w/ most recently assigned task, excluding other busy agents",
-			store: storage.NewStore([]*storage.Agent{
-				&storage.Agent{Name: "Adam", Skills: storage.Skills{storage.Skill1, storage.Skill2}, Tasks: []*storage.Task{
-					&storage.Task{ID: 1, Priority: storage.PriorityLow, ReqSkills: storage.Skills{storage.Skill1}, State: storage.TaskInWIP, AssignmentTime: time.Now().Add(-2 * time.Hour)},
+			store: service.NewStore([]*service.Agent{
+				&service.Agent{Name: "Adam", Skills: service.Skills{service.Skill1, service.Skill2}, Tasks: []*service.Task{
+					&service.Task{ID: 1, Priority: service.PriorityLow, ReqSkills: service.Skills{service.Skill1}, State: service.TaskInWIP, AssignmentTime: time.Now().Add(-2 * time.Hour)},
 				}},
-				&storage.Agent{Name: "Betty", Skills: storage.Skills{storage.Skill2, storage.Skill3}, Tasks: []*storage.Task{}},
-				&storage.Agent{Name: "Charlie", Skills: storage.Skills{storage.Skill1}, Tasks: []*storage.Task{
-					&storage.Task{ID: 3, Priority: storage.PriorityHigh, ReqSkills: storage.Skills{storage.Skill1}, State: storage.TaskInWIP},
-					&storage.Task{ID: 2, Priority: storage.PriorityLow, ReqSkills: storage.Skills{storage.Skill1}, State: storage.TaskInWIP},
+				&service.Agent{Name: "Betty", Skills: service.Skills{service.Skill2, service.Skill3}, Tasks: []*service.Task{}},
+				&service.Agent{Name: "Charlie", Skills: service.Skills{service.Skill1}, Tasks: []*service.Task{
+					&service.Task{ID: 3, Priority: service.PriorityHigh, ReqSkills: service.Skills{service.Skill1}, State: service.TaskInWIP},
+					&service.Task{ID: 2, Priority: service.PriorityLow, ReqSkills: service.Skills{service.Skill1}, State: service.TaskInWIP},
 				}},
 			}, nil),
 			postBody:   testRequest{Priority: "high", ReqSkills: []string{"skill1"}},
@@ -229,15 +229,15 @@ func Test_route_Tasks_New_POST(t *testing.T) {
 				AssignedAgent:  testResponseAgent{ID: 1, Name: "Adam", Skills: []string{"skill1", "skill2"}},
 				TaskState:      0,
 			},
-			wantStore: storage.NewStore([]*storage.Agent{
-				&storage.Agent{Name: "Adam", Skills: storage.Skills{storage.Skill1, storage.Skill2}, Tasks: []*storage.Task{
-					&storage.Task{ID: 4, Priority: storage.PriorityHigh, ReqSkills: storage.Skills{storage.Skill1}, State: storage.TaskInWIP},
-					&storage.Task{ID: 1, Priority: storage.PriorityLow, ReqSkills: storage.Skills{storage.Skill1}, State: storage.TaskInWIP},
+			wantStore: service.NewStore([]*service.Agent{
+				&service.Agent{Name: "Adam", Skills: service.Skills{service.Skill1, service.Skill2}, Tasks: []*service.Task{
+					&service.Task{ID: 4, Priority: service.PriorityHigh, ReqSkills: service.Skills{service.Skill1}, State: service.TaskInWIP},
+					&service.Task{ID: 1, Priority: service.PriorityLow, ReqSkills: service.Skills{service.Skill1}, State: service.TaskInWIP},
 				}},
-				&storage.Agent{Name: "Betty", Skills: storage.Skills{storage.Skill2, storage.Skill3}, Tasks: []*storage.Task{}},
-				&storage.Agent{Name: "Charlie", Skills: storage.Skills{storage.Skill1}, Tasks: []*storage.Task{
-					&storage.Task{ID: 3, Priority: storage.PriorityHigh, ReqSkills: storage.Skills{storage.Skill1}, State: storage.TaskInWIP},
-					&storage.Task{ID: 2, Priority: storage.PriorityLow, ReqSkills: storage.Skills{storage.Skill1}, State: storage.TaskInWIP},
+				&service.Agent{Name: "Betty", Skills: service.Skills{service.Skill2, service.Skill3}, Tasks: []*service.Task{}},
+				&service.Agent{Name: "Charlie", Skills: service.Skills{service.Skill1}, Tasks: []*service.Task{
+					&service.Task{ID: 3, Priority: service.PriorityHigh, ReqSkills: service.Skills{service.Skill1}, State: service.TaskInWIP},
+					&service.Task{ID: 2, Priority: service.PriorityLow, ReqSkills: service.Skills{service.Skill1}, State: service.TaskInWIP},
 				}},
 			}, nil),
 		},
@@ -295,12 +295,12 @@ func Test_route_Tasks_New_POST(t *testing.T) {
 				if err != nil {
 					t.Fatal(err)
 				}
-				var wantTask storage.Task
+				var wantTask service.Task
 				err = json.Unmarshal(wantRespJSON, &wantTask) // Unmarshal expected test result JSON --> Task{}
 				if err != nil {
 					t.Fatal(err)
 				}
-				var gotTask storage.Task
+				var gotTask service.Task
 				err = json.Unmarshal(w.Body.Bytes(), &gotTask) // Unmarshal POST HTTP response body --> Task{}
 				if err != nil {
 					t.Fatal(err)
@@ -325,50 +325,50 @@ func Test_route_Tasks_Update_Complete_POST(t *testing.T) {
 
 	tests := []struct {
 		name       string         // Test name
-		store      *storage.Store // Initial state of the data store prior to HTTP request
+		store      *service.Store // Initial state of the data store prior to HTTP request
 		postBody   testRequest    // HTTP request body (in struct form)
 		wantStatus int            // Expected HTTP response code
-		wantStore  *storage.Store // Expected state of the data store after HTTP request is complete
+		wantStore  *service.Store // Expected state of the data store after HTTP request is complete
 	}{
 		{
 			name: "Simple task completion",
-			store: storage.NewStore([]*storage.Agent{
-				&storage.Agent{Name: "Adam", Skills: storage.Skills{storage.Skill1, storage.Skill2}, Tasks: []*storage.Task{
-					&storage.Task{ID: 1, Priority: storage.PriorityHigh, ReqSkills: storage.Skills{storage.Skill1}, State: storage.TaskInWIP},
+			store: service.NewStore([]*service.Agent{
+				&service.Agent{Name: "Adam", Skills: service.Skills{service.Skill1, service.Skill2}, Tasks: []*service.Task{
+					&service.Task{ID: 1, Priority: service.PriorityHigh, ReqSkills: service.Skills{service.Skill1}, State: service.TaskInWIP},
 				}},
-				&storage.Agent{Name: "Betty", Skills: storage.Skills{storage.Skill2, storage.Skill3}, Tasks: []*storage.Task{}},
-				&storage.Agent{Name: "Charlie", Skills: storage.Skills{storage.Skill1}, Tasks: []*storage.Task{}},
+				&service.Agent{Name: "Betty", Skills: service.Skills{service.Skill2, service.Skill3}, Tasks: []*service.Task{}},
+				&service.Agent{Name: "Charlie", Skills: service.Skills{service.Skill1}, Tasks: []*service.Task{}},
 			}, nil),
 			postBody:   testRequest{ID: 1},
 			wantStatus: http.StatusOK,
-			wantStore: storage.NewStore([]*storage.Agent{
-				&storage.Agent{Name: "Adam", Skills: storage.Skills{storage.Skill1, storage.Skill2}, Tasks: []*storage.Task{}},
-				&storage.Agent{Name: "Betty", Skills: storage.Skills{storage.Skill2, storage.Skill3}, Tasks: []*storage.Task{}},
-				&storage.Agent{Name: "Charlie", Skills: storage.Skills{storage.Skill1}, Tasks: []*storage.Task{}},
-			}, []*storage.Task{
-				&storage.Task{ID: 1, Priority: storage.PriorityHigh, ReqSkills: storage.Skills{storage.Skill1}, State: storage.TaskComplete, AssignedAgent: &storage.Agent{ID: 1, Name: "Adam", Skills: storage.Skills{storage.Skill1, storage.Skill2}}},
+			wantStore: service.NewStore([]*service.Agent{
+				&service.Agent{Name: "Adam", Skills: service.Skills{service.Skill1, service.Skill2}, Tasks: []*service.Task{}},
+				&service.Agent{Name: "Betty", Skills: service.Skills{service.Skill2, service.Skill3}, Tasks: []*service.Task{}},
+				&service.Agent{Name: "Charlie", Skills: service.Skills{service.Skill1}, Tasks: []*service.Task{}},
+			}, []*service.Task{
+				&service.Task{ID: 1, Priority: service.PriorityHigh, ReqSkills: service.Skills{service.Skill1}, State: service.TaskComplete, AssignedAgent: &service.Agent{ID: 1, Name: "Adam", Skills: service.Skills{service.Skill1, service.Skill2}}},
 			}),
 		},
 		{
 			name: "Task completion with >1 tasks in queue",
-			store: storage.NewStore([]*storage.Agent{
-				&storage.Agent{Name: "Adam", Skills: storage.Skills{storage.Skill1, storage.Skill2}, Tasks: []*storage.Task{
-					&storage.Task{ID: 1, Priority: storage.PriorityHigh, ReqSkills: storage.Skills{storage.Skill1}, State: storage.TaskInWIP},
-					&storage.Task{ID: 2, Priority: storage.PriorityLow, ReqSkills: storage.Skills{storage.Skill1}, State: storage.TaskInWIP},
+			store: service.NewStore([]*service.Agent{
+				&service.Agent{Name: "Adam", Skills: service.Skills{service.Skill1, service.Skill2}, Tasks: []*service.Task{
+					&service.Task{ID: 1, Priority: service.PriorityHigh, ReqSkills: service.Skills{service.Skill1}, State: service.TaskInWIP},
+					&service.Task{ID: 2, Priority: service.PriorityLow, ReqSkills: service.Skills{service.Skill1}, State: service.TaskInWIP},
 				}},
-				&storage.Agent{Name: "Betty", Skills: storage.Skills{storage.Skill2, storage.Skill3}, Tasks: []*storage.Task{}},
-				&storage.Agent{Name: "Charlie", Skills: storage.Skills{storage.Skill1}, Tasks: []*storage.Task{}},
+				&service.Agent{Name: "Betty", Skills: service.Skills{service.Skill2, service.Skill3}, Tasks: []*service.Task{}},
+				&service.Agent{Name: "Charlie", Skills: service.Skills{service.Skill1}, Tasks: []*service.Task{}},
 			}, nil),
 			postBody:   testRequest{ID: 1},
 			wantStatus: http.StatusOK,
-			wantStore: storage.NewStore([]*storage.Agent{
-				&storage.Agent{Name: "Adam", Skills: storage.Skills{storage.Skill1, storage.Skill2}, Tasks: []*storage.Task{
-					&storage.Task{ID: 2, Priority: storage.PriorityLow, ReqSkills: storage.Skills{storage.Skill1}, State: storage.TaskInWIP},
+			wantStore: service.NewStore([]*service.Agent{
+				&service.Agent{Name: "Adam", Skills: service.Skills{service.Skill1, service.Skill2}, Tasks: []*service.Task{
+					&service.Task{ID: 2, Priority: service.PriorityLow, ReqSkills: service.Skills{service.Skill1}, State: service.TaskInWIP},
 				}},
-				&storage.Agent{Name: "Betty", Skills: storage.Skills{storage.Skill2, storage.Skill3}, Tasks: []*storage.Task{}},
-				&storage.Agent{Name: "Charlie", Skills: storage.Skills{storage.Skill1}, Tasks: []*storage.Task{}},
-			}, []*storage.Task{
-				&storage.Task{ID: 1, Priority: storage.PriorityHigh, ReqSkills: storage.Skills{storage.Skill1}, State: storage.TaskComplete, AssignedAgent: &storage.Agent{ID: 1, Name: "Adam", Skills: storage.Skills{storage.Skill1, storage.Skill2}}},
+				&service.Agent{Name: "Betty", Skills: service.Skills{service.Skill2, service.Skill3}, Tasks: []*service.Task{}},
+				&service.Agent{Name: "Charlie", Skills: service.Skills{service.Skill1}, Tasks: []*service.Task{}},
+			}, []*service.Task{
+				&service.Task{ID: 1, Priority: service.PriorityHigh, ReqSkills: service.Skills{service.Skill1}, State: service.TaskComplete, AssignedAgent: &service.Agent{ID: 1, Name: "Adam", Skills: service.Skills{service.Skill1, service.Skill2}}},
 			}),
 		},
 	}

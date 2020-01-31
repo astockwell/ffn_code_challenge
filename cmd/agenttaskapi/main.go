@@ -3,7 +3,7 @@ package main
 import (
 	"net/http"
 
-	"github.com/astockwell/ffn/pkg/storage"
+	"github.com/astockwell/ffn/pkg/service"
 	"github.com/julienschmidt/httprouter"
 	log "github.com/sirupsen/logrus"
 	"github.com/unrolled/render"
@@ -16,11 +16,11 @@ func main() {
 	log.SetLevel(log.TraceLevel)
 
 	// Setup data store
-	store := &storage.Store{}
+	store := &service.Store{}
 
 	// Seed data store
 	log.Tracef("Building Seed Agents...")
-	agents := storage.BuildSeedAgents()
+	agents := service.BuildSeedAgents()
 	log.Tracef("Persisting Seed Agents...")
 	err := store.AddAgents(agents)
 	if err != nil {

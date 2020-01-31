@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/astockwell/ffn/pkg/storage"
+	"github.com/astockwell/ffn/pkg/service"
 	"github.com/julienschmidt/httprouter"
 	log "github.com/sirupsen/logrus"
 )
@@ -32,7 +32,7 @@ func route_Tasks_New_POST(dso *DataSourceOrchestration) httprouter.Handle {
 		log.Tracef("route_Tasks_New_POST(): Started")
 
 		// Parse request body JSON
-		var newTask storage.Task
+		var newTask service.Task
 		decoder := json.NewDecoder(r.Body)
 		err := decoder.Decode(&newTask)
 		if err != nil {
@@ -78,7 +78,7 @@ func route_Tasks_Update_Complete_POST(dso *DataSourceOrchestration) httprouter.H
 		log.Tracef("route_Tasks_Update_Complete_POST(): Started")
 
 		// Parse request body JSON
-		var task storage.Task
+		var task service.Task
 		decoder := json.NewDecoder(r.Body)
 		err := decoder.Decode(&task)
 		if err != nil {
