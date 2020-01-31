@@ -17,6 +17,19 @@ The following routes are supported:
 ## Testing
 Tests can be run within ./cmd/agenttaskapi by running `go test`.
 
+The following tests are defined and passing:
+- Test_route_Tasks_New_POST
+- Test_route_Tasks_New_POST/Simple_Assignment_goes_to_first_available_agent
+- Test_route_Tasks_New_POST/Simple_Assignment_w/_existing_task_(1)_goes_to_next_available_agent
+- Test_route_Tasks_New_POST/Simple_Assignment_w/_existing_tasks_(2)_goes_to_last_available_agent
+- Test_route_Tasks_New_POST/Assignment_fails:_no_agent_w/_skills_available
+- Test_route_Tasks_New_POST/Assignment_fails:_no_agent_available_for_priority
+- Test_route_Tasks_New_POST/Assignment_of_higher_priority_proceeds_to_agent_w/_most_recently_assigned_task
+- Test_route_Tasks_New_POST/Assignment_of_higher_priority_proceeds_to_agent_w/_most_recently_assigned_task,_excluding_other_busy_agents
+- Test_route_Tasks_Update_Complete_POST
+- Test_route_Tasks_Update_Complete_POST/Simple_task_completion
+- Test_route_Tasks_Update_Complete_POST/Task_completion_with_>1_tasks_in_queue
+
 ## Questions / Answers
 It seems that an agent can be assigned multiple active tasks, as long as priority is respected. Is that true?
 - As long as the conditions are not violated and priority is respected, an agent can be assigned multiple tasks.
