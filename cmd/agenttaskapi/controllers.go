@@ -73,6 +73,7 @@ func route_Tasks_New_POST(dso *DataSourceOrchestration) httprouter.Handle {
 	}
 }
 
+// route_Tasks_Update_Complete_POST marks the task as complete via the given task ID
 func route_Tasks_Update_Complete_POST(dso *DataSourceOrchestration) httprouter.Handle {
 	return func(w http.ResponseWriter, r *http.Request, rp httprouter.Params) {
 		log.Tracef("route_Tasks_Update_Complete_POST(): Started")

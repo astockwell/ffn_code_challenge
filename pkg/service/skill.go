@@ -34,27 +34,3 @@ func (s *Skills) Includes(targetSkill Skill) bool {
 	}
 	return false
 }
-
-// // UnmarshalJSON performs validations at the time of Unmarshalling JSON
-// func (s Skills) UnmarshalJSON(b []byte) error {
-// 	var skills []string
-// 	err := json.Unmarshal(b, &skills)
-// 	if err != nil {
-// 		return errors.Wrap(err, "json.Unmarshal")
-// 	}
-
-// 	for _, skill := range skills {
-// 		switch skill {
-// 		case string(Skill1):
-// 			s = append(s, Skill1)
-// 		case string(Skill2):
-// 			s = append(s, Skill2)
-// 		case string(Skill3):
-// 			s = append(s, Skill3)
-// 		default:
-// 			return fmt.Errorf("Invalid Skill: %v", skill)
-// 		}
-// 	}
-
-// 	return nil
-// }

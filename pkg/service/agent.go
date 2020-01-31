@@ -82,7 +82,7 @@ func (as *Agents) SortByTaskStartTime() error {
 }
 
 // PluckRandomAgent returns a random agent from the receiver
-// TODO: NOT YET IMPLEMENTED
+// TODO: NOT YET IMPLEMENTED, SELECTS 1st AGENT DETERMINISTICALLY
 func (as *Agents) PluckRandomAgent() (Agent, error) {
 	if len(*as) < 1 {
 		return Agent{}, fmt.Errorf("No agents to pick from")
