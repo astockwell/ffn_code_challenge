@@ -3,7 +3,7 @@
 ## Build / Run
 Can be built with `go build` (modules-enabled).
 
-Can be downloaded and run from the latest Release.
+Can be downloaded and run from the latest [Release](https://github.com/astockwell/ffn_code_challenge/releases).
 
 ## Use
 The server listens for HTTP on port :8080. The data is stored ephemerally in-memory, with Agents, Skills, and Priorities pre-seeded at runtime.
