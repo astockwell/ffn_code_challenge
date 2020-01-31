@@ -14,6 +14,9 @@ The following routes are supported:
 - `/tasks/new` - Create a new task. Accepts a task object and will return that task, updated with the assigned agent if one was available. Example: `curl -X POST -d '{"priority":"high","required_skills":["skill1"]}' http://localhost:8080/tasks/new`
 - `/tasks/complete` - Mark a task as completed. Example: `curl -X POST -d '{"id":2}' http://localhost:8080/tasks/complete`
 
+## Testing
+Tests can be run within ./cmd/agenttaskapi by running `go test`.
+
 ## Questions / Answers
 It seems that an agent can be assigned multiple active tasks, as long as priority is respected. Is that true?
 - As long as the conditions are not violated and priority is respected, an agent can be assigned multiple tasks.
